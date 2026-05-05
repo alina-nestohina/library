@@ -1,20 +1,24 @@
 namespace LibraryApp
 {
     /// <summary>
-    /// Представляє модель книги в особистій бібліотеці.
+    /// Модель книги.
     /// </summary>
     public class Book
     {
-        /// <summary> Назва книги. </summary>
-        public string Title { get; set; }
-
-        /// <summary> Автор книги. </summary>
-        public string Author { get; set; }
-
-        /// <summary> Рік видання. </summary>
+        public string Title { get; set; } = string.Empty;
+        public string Author { get; set; } = string.Empty;
         public int Year { get; set; }
+        public string Genre { get; set; } = string.Empty;
 
-        /// <summary> Жанр або категорія. </summary>
-        public string Genre { get; set; }
+        // Конструктор без параметрів (потрібен для ініціалізації)
+        public Book() { }
+
+        // Конструктор з 3 параметрами (який вимагає LibraryManager)
+        public Book(string title, string author, int year)
+        {
+            Title = title;
+            Author = author;
+            Year = year;
+        }
     }
 }
