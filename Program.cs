@@ -1,23 +1,24 @@
 ﻿using System;
-using LibraryApp;
+using System.Windows.Forms;
 
-class Program
+namespace LibraryApp
 {
-    static void Main(string[] args)
+    static class Program
     {
-        LibraryManager manager = new LibraryManager();
-
-        // Додаємо тестову книгу
-        manager.AddBook(new Book("Kobzar", "T. Shevchenko", 1840));
-
-        Console.WriteLine("--- Список книг у бібліотеці ---");
-        foreach (var book in manager.GetAllBooks())
+        /// <summary>
+        /// Головна точка входу для додатка.
+        /// </summary>
+        [STAThread]
+        static void Main()
         {
-            Console.WriteLine($"{book.Author} - {book.Title} ({book.Year})");
+            // Вмикаємо візуальні стилі Windows (щоб кнопки були гарними)
+            Application.EnableVisualStyles();
+            // Налаштовуємо сумісність тексту
+            Application.SetCompatibleTextRenderingDefault(false);
+            
+            // ЗАПУСК ГОЛОВНОГО ВІКНА
+            // (Ми створимо клас MainForm на наступному кроці)
+            Application.Run(new MainForm()); 
         }
-
-        // Тестуємо збереження (вимога розділу 1.2)
-        manager.SaveToFile("library.txt");
-        Console.WriteLine("\nДані успішно збережені у файл library.txt");
     }
 }
