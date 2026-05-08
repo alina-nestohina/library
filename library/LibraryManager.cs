@@ -13,6 +13,17 @@ namespace LibraryApp
 
         public List<Book> GetAllBooks() => _books;
 
+        public List<Book> SearchBooks(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return GetAllBooks();
+
+            return _books.Where(b =>
+                b.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                b.Author.Contains(query, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+
         /// <summary>
         /// Редагування існуючої книги (пошук за індексом для надійності).
         /// </summary>
