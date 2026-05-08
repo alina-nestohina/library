@@ -5,112 +5,62 @@ using System.Linq;
 
 namespace LibraryApp
 {
-    /// <summary>
-    /// Клас LibraryManager реалізує логіку керування колекцією книг.
-    /// Забезпечує функції пошуку, видалення та збереження даних.
-    /// </summary>
     public class LibraryManager
     {
-        // Приватна колекція для забезпечення інкапсуляції (вимога ООП)
         private List<Book> _books = new List<Book>();
 
+        public void AddBook(Book book) => _books.Add(book);
+
+        public List<Book> GetAllBooks() => _books;
+
         /// <summary>
-        /// Додає новий об'єкт книги до списку.
+        /// Редагування існуючої книги (пошук за індексом для надійності).
         /// </summary>
-        public void AddBook(Book book)
+        public void UpdateBook(int index, Book updatedBook)
         {
-            if (book != null)
+            if (index >= 0 && index < _books.Count)
             {
-                _books.Add(book);
+                _books[index] = updatedBook;
             }
         }
 
-        /// <summary>
-        /// Повертає повний список книг для відображення в інтерфейсі.
-        /// </summary>
-        public List<Book> GetAllBooks()
+        public void RemoveBookAt(int index)
         {
-            return _books;
+            if (index >= 0 && index < _books.Count) _books.RemoveAt(index);
         }
 
         /// <summary>
-        /// Шукає книги за фрагментом назви або автора (незалежно від регістру).
+        /// Інвентаризація: підрахунок загальної кількості книг.
         /// </summary>
-        public List<Book> SearchBooks(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query))
-                return _books;
+        public int GetTotalCount() => _books.Count;
 
-            string lowerQuery = query.ToLower();
-            
-            return _books.Where(b => 
-                b.Title.ToLower().Contains(lowerQuery) || 
-                b.Author.ToLower().Contains(lowerQuery)
-            ).ToList();
-        }
-
-        /// <summary>
-        /// Видаляє книгу зі списку за точною назвою.
-        /// </summary>
-        public bool RemoveBook(string title)
-        {
-            var bookToRemove = _books.FirstOrDefault(b => 
-                b.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
-            
-            if (bookToRemove != null)
-            {
-                _books.Remove(bookToRemove);
-                return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Зберігає дані у текстовий файл для забезпечення цілісності.
-        /// </summary>
+        // Збереження всіх полів (тепер їх 8)
         public void SaveToFile(string filePath)
         {
-            try
+            using (StreamWriter writer = new StreamWriter(filePath))
             {
-                using (StreamWriter writer = new StreamWriter(filePath))
+                foreach (var b in _books)
                 {
-                    foreach (var book in _books)
-                    {
-                        // Формат запису: Назва;Автор;Рік
-                        writer.WriteLine($"{book.Title};{book.Author};{book.Year}");
-                    }
+                    writer.WriteLine($"{b.Title};{b.Author};{b.Year};{b.Publisher};{b.Section};{b.Origin};{b.IsAvailable};{b.Rating}");
                 }
-            }
-            catch (Exception ex)
-            {
-                // Обробка помилок для стійкості програми
-                Console.WriteLine($"Помилка збереження: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// Завантажує дані з файлу при запуску програми.
-        /// </summary>
+        // Безпечне завантаження з валідацією TryParse
         public void LoadFromFile(string filePath)
         {
             if (!File.Exists(filePath)) return;
-
-            try
+            _books.Clear();
+            foreach (var line in File.ReadAllLines(filePath))
             {
-                _books.Clear();
-                string[] lines = File.ReadAllLines(filePath);
-                foreach (var line in lines)
+                var p = line.Split(';');
+                if (p.Length == 8)
                 {
-                    string[] parts = line.Split(';');
-                    if (parts.Length == 3)
-                    {
-                        _books.Add(new Book(parts[0], parts[1], int.Parse(parts[2])));
-                    }
+                    int.TryParse(p[2], out int year);
+                    bool.TryParse(p[6], out bool available);
+                    int.TryParse(p[7], out int rating);
+                    _books.Add(new Book(p[0], p[1], year, p[3], p[4], p[5], available, rating));
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Помилка завантаження: {ex.Message}");
             }
         }
     }
