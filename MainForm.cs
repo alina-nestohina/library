@@ -65,24 +65,24 @@ namespace LibraryApp
             _dataGridView.DataSource = _manager.SearchBooks(_txtSearch.Text);
         }
 
-        private void AddBook()
+       private void AddBook()
         {
-            // СТВОРЮЄМО ТЕСТОВУ КНИГУ З 8 ПОЛЯМИ, ЩОБ НЕ БУЛО ПОМИЛКИ
-            // (Заміни цей блок, коли створиш AddBookForm.cs)
-            var testBook = new Book(
-                "Нова книга", 
-                "Автор", 
-                2026, 
-                "Видавництво", 
-                "Розділ", 
-                "Куплена", 
-                true, 
-                5
-            );
-            
-            _manager.AddBook(testBook);
-            _manager.SaveToFile("library.txt");
-            RefreshGrid();
+            // Відкриваємо вікно AddBookForm для введення даних
+            using (AddBookForm addForm = new AddBookForm())
+            {
+                // Якщо користувач натиснув "Зберегти" (OK)
+                if (addForm.ShowDialog() == DialogResult.OK)
+                {
+                    // Отримуємо нову книгу з форми та додаємо її в менеджер
+                    _manager.AddBook(addForm.NewBook);
+                    
+                    // Зберігаємо оновлений список у файл
+                    _manager.SaveToFile("library.txt");
+                    
+                    // Оновлюємо таблицю на екрані
+                    RefreshGrid();
+                }
+            }
         }
 
         private void DeleteBook()
