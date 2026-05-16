@@ -5,29 +5,32 @@ using System.Linq;
 
 namespace LibraryApp
 {
+    /// <summary>
+    /// Керує колекцією книг: додавання, видалення, редагування, пошук та збереження.
+    /// </summary>
     public class LibraryManager
     {
-        private List<Book> _books = new List<Book>();
-
-        public void AddBook(Book book) => _books.Add(book);
-
-        public List<Book> GetAllBooks() => _books;
-
-        public List<Book> SearchBooks(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query))
-                return GetAllBooks();
-
-            return _books.Where(b =>
-                b.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                b.Author.Contains(query, StringComparison.OrdinalIgnoreCase)
-            ).ToList();
-        }
+        private readonly List<Book> _books = new();
 
         /// <summary>
-        /// Редагування існуючої книги (пошук за індексом для надійності).
+        /// Повертає повний список усіх книг у бібліотеці.
         /// </summary>
-        public void UpdateBook(int index, Book updatedBook)
+        public List<Book> GetAllBooks() => _books.ToList();
+
+        /// <summary>
+        /// Повертає загальну кількість книг у базі даних.
+        /// </summary>
+        public int GetTotalCount() => _books.Count;
+
+        /// <summary>
+        /// Додає нову книгу до колекції.
+        /// </summary>
+        public void AddBook(Book book) => _books.Add(book);
+
+        /// <summary>
+        /// Оновлює дані існуючої книги за її позицією у списку.
+        /// </summary>
+        public void UpdateBookAt(int index, Book updatedBook)
         {
             if (index >= 0 && index < _books.Count)
             {
@@ -35,42 +38,47 @@ namespace LibraryApp
             }
         }
 
+        /// <summary>
+        /// Вилучає книгу з колекції за її позицією.
+        /// </summary>
         public void RemoveBookAt(int index)
         {
             if (index >= 0 && index < _books.Count) _books.RemoveAt(index);
         }
 
         /// <summary>
-        /// Інвентаризація: підрахунок загальної кількості книг.
+        /// Виконує пошук книг за частковим збігом у назві або імені автора.
         /// </summary>
-        public int GetTotalCount() => _books.Count;
-
-        // Збереження всіх полів (тепер їх 8)
-        public void SaveToFile(string filePath)
+        public List<Book> SearchBooks(string query)
         {
-            using (StreamWriter writer = new StreamWriter(filePath))
-            {
-                foreach (var b in _books)
-                {
-                    writer.WriteLine($"{b.Title};{b.Author};{b.Year};{b.Publisher};{b.Section};{b.Origin};{b.IsAvailable};{b.Rating}");
-                }
-            }
+            if (string.IsNullOrWhiteSpace(query)) return GetAllBooks();
+            return _books.Where(b => b.Title.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+                                     b.Author.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        // Безпечне завантаження з валідацією TryParse
-        public void LoadFromFile(string filePath)
+        /// <summary>
+        /// Зберігає поточну колекцію книг у текстовий файл.
+        /// </summary>
+        public void SaveToFile(string path)
         {
-            if (!File.Exists(filePath)) return;
+            var lines = _books.Select(b => $"{b.Title};{b.Author};{b.Year};{b.Publisher};{b.Section};{b.Origin};{b.IsAvailable};{b.Rating}");
+            File.WriteAllLines(path, lines);
+        }
+
+        /// <summary>
+        /// Завантажує колекцію книг із текстового файлу.
+        /// </summary>
+        public void LoadFromFile(string path)
+        {
+            if (!File.Exists(path)) return;
+            var lines = File.ReadAllLines(path);
             _books.Clear();
-            foreach (var line in File.ReadAllLines(filePath))
+            foreach (var line in lines)
             {
-                var p = line.Split(';');
-                if (p.Length == 8)
+                var parts = line.Split(';');
+                if (parts.Length == 8)
                 {
-                    int.TryParse(p[2], out int year);
-                    bool.TryParse(p[6], out bool available);
-                    int.TryParse(p[7], out int rating);
-                    _books.Add(new Book(p[0], p[1], year, p[3], p[4], p[5], available, rating));
+                    _books.Add(new Book(parts[0], parts[1], int.Parse(parts[2]), parts[3], parts[4], parts[5], bool.Parse(parts[6]), int.Parse(parts[7])));
                 }
             }
         }

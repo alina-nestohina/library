@@ -1,19 +1,22 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Collections.Generic;
 
 namespace LibraryApp
 {
+    /// <summary>
+    /// Головне вікно системи особистої бібліотеки користувача.
+    /// </summary>
     public class MainForm : Form
     {
-        private LibraryManager _manager = new();
+        private readonly LibraryManager _manager = new();
         private DataGridView _dataGridView = null!;
-        private Button _btnAdd = null!;
-        private Button _btnDelete = null!;
         private TextBox _txtSearch = null!;
         private Label _lblStatus = null!;
 
+        /// <summary>
+        /// Ініціалізує новий екземпляр класу <see cref="MainForm"/>.
+        /// </summary>
         public MainForm()
         {
             _manager.LoadFromFile("library.txt");
@@ -23,18 +26,18 @@ namespace LibraryApp
 
         private void InitializeComponent()
         {
-            this.Text = "Особиста бібліотека";
-            this.Size = new Size(950, 550); // Трохи розширив для 8 колонок
+            this.Text = "Особиста бібліотека (Група ПЗПІ-25-1)";
+            this.Size = new Size(1000, 520);
             this.StartPosition = FormStartPosition.CenterScreen;
 
-            Label lblSearch = new Label { Text = "Пошук:", Location = new Point(20, 10), AutoSize = true };
-            _txtSearch = new TextBox { Location = new Point(20, 30), Width = 250 };
+            Label lblSearch = new Label { Text = "Швидкий пошук за назвою або автором:", Location = new Point(20, 15), AutoSize = true };
+            _txtSearch = new TextBox { Location = new Point(20, 35), Width = 300 };
             _txtSearch.TextChanged += (s, e) => Search();
 
             _dataGridView = new DataGridView
             {
                 Location = new Point(20, 70),
-                Size = new Size(890, 320),
+                Size = new Size(940, 310),
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 ReadOnly = true,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
@@ -42,22 +45,25 @@ namespace LibraryApp
                 BackgroundColor = Color.White
             };
 
-            _btnAdd = new Button { Text = "➕ Додати книгу", Location = new Point(20, 410), Width = 150, Height = 40 };
-            _btnAdd.Click += (s, e) => AddBook();
+            Button btnAdd = new Button { Text = "➕ Додати книгу", Location = new Point(20, 400), Width = 150, Height = 40 };
+            btnAdd.Click += (s, e) => AddBook();
 
-            _btnDelete = new Button { Text = "🗑 Видалити", Location = new Point(180, 410), Width = 150, Height = 40 };
-            _btnDelete.Click += (s, e) => DeleteBook();
+            Button btnEdit = new Button { Text = "✏️ Редагувати", Location = new Point(180, 400), Width = 150, Height = 40 };
+            btnEdit.Click += (s, e) => EditBook();
 
-            _lblStatus = new Label { Location = new Point(20, 470), AutoSize = true, Font = new Font(this.Font, FontStyle.Bold) };
+            Button btnDelete = new Button { Text = "🗑 Видалити", Location = new Point(340, 400), Width = 150, Height = 40 };
+            btnDelete.Click += (s, e) => DeleteBook();
 
-            this.Controls.AddRange(new Control[] { lblSearch, _txtSearch, _dataGridView, _btnAdd, _btnDelete, _lblStatus });
+            _lblStatus = new Label { Location = new Point(20, 455), AutoSize = true, Font = new Font(this.Font, FontStyle.Bold) };
+
+            this.Controls.AddRange(new Control[] { lblSearch, _txtSearch, _dataGridView, btnAdd, btnEdit, btnDelete, _lblStatus });
         }
 
         private void RefreshGrid()
         {
             _dataGridView.DataSource = null;
             _dataGridView.DataSource = _manager.GetAllBooks();
-            _lblStatus.Text = $"Книг у базі: {_manager.GetTotalCount()}";
+            _lblStatus.Text = $"Загальна кількість книг у сховищі: {_manager.GetTotalCount()}";
         }
 
         private void Search()
@@ -65,38 +71,58 @@ namespace LibraryApp
             _dataGridView.DataSource = _manager.SearchBooks(_txtSearch.Text);
         }
 
-       private void AddBook()
+        private void AddBook()
         {
-            // Відкриваємо вікно AddBookForm для введення даних
             using (AddBookForm addForm = new AddBookForm())
             {
-                // Якщо користувач натиснув "Зберегти" (OK)
                 if (addForm.ShowDialog() == DialogResult.OK)
                 {
-                    // Отримуємо нову книгу з форми та додаємо її в менеджер
                     _manager.AddBook(addForm.NewBook);
-                    
-                    // Зберігаємо оновлений список у файл
                     _manager.SaveToFile("library.txt");
-                    
-                    // Оновлюємо таблицю на екрані
                     RefreshGrid();
                 }
             }
         }
 
+        private void EditBook()
+        {
+            if (_dataGridView.CurrentRow != null)
+            {
+                Book selectedBook = (Book)_dataGridView.CurrentRow.DataBoundItem;
+                int position = _dataGridView.CurrentRow.Index;
+
+                using (AddBookForm editForm = new AddBookForm(selectedBook))
+                {
+                    if (editForm.ShowDialog() == DialogResult.OK)
+                    {
+                        _manager.UpdateBookAt(position, editForm.NewBook);
+                        _manager.SaveToFile("library.txt");
+                        RefreshGrid();
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Будь ласка, виберіть рядок для редагування.", "Увага");
+            }
+        }
+
         private void DeleteBook()
         {
-            if (_dataGridView.SelectedRows.Count > 0)
+            if (_dataGridView.CurrentRow != null)
             {
-                var result = MessageBox.Show("Видалити цей запис?", "Підтвердження", MessageBoxButtons.YesNo);
+                var result = MessageBox.Show("Ви дійсно бажаєте вилучити цей запис із системи?", "Підтвердження вилучення", MessageBoxButtons.YesNo);
                 if (result == DialogResult.Yes)
                 {
-                    int index = _dataGridView.SelectedRows[0].Index;
-                    _manager.RemoveBookAt(index);
+                    int position = _dataGridView.CurrentRow.Index;
+                    _manager.RemoveBookAt(position);
                     _manager.SaveToFile("library.txt");
                     RefreshGrid();
                 }
+            }
+            else
+            {
+                MessageBox.Show("Будь ласка, виберіть рядок для вилучення.", "Увага");
             }
         }
     }
