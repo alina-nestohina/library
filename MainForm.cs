@@ -86,9 +86,8 @@ namespace LibraryApp
 
         private void EditBook()
         {
-            if (_dataGridView.CurrentRow != null)
+            if (_dataGridView.CurrentRow?.DataBoundItem is Book selectedBook)
             {
-                Book selectedBook = (Book)_dataGridView.CurrentRow.DataBoundItem;
                 int position = _dataGridView.CurrentRow.Index;
 
                 using (AddBookForm editForm = new AddBookForm(selectedBook))
@@ -109,7 +108,7 @@ namespace LibraryApp
 
         private void DeleteBook()
         {
-            if (_dataGridView.CurrentRow != null)
+            if (_dataGridView.CurrentRow?.DataBoundItem is Book)
             {
                 var result = MessageBox.Show("Ви дійсно бажаєте вилучити цей запис із системи?", "Підтвердження вилучення", MessageBoxButtons.YesNo);
                 if (result == DialogResult.Yes)
