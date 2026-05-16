@@ -13,7 +13,7 @@ namespace LibraryApp
         private readonly List<Book> _books = new();
 
         /// <summary>
-        /// Повертає повний список усіх книг у бібліотеці.
+        /// Повертає копію повного списку усіх книг у бібліотеці.
         /// </summary>
         public List<Book> GetAllBooks() => _books.ToList();
 
@@ -33,9 +33,7 @@ namespace LibraryApp
         public void UpdateBookAt(int index, Book updatedBook)
         {
             if (index >= 0 && index < _books.Count)
-            {
                 _books[index] = updatedBook;
-            }
         }
 
         /// <summary>
@@ -43,7 +41,8 @@ namespace LibraryApp
         /// </summary>
         public void RemoveBookAt(int index)
         {
-            if (index >= 0 && index < _books.Count) _books.RemoveAt(index);
+            if (index >= 0 && index < _books.Count)
+                _books.RemoveAt(index);
         }
 
         /// <summary>
@@ -51,34 +50,47 @@ namespace LibraryApp
         /// </summary>
         public List<Book> SearchBooks(string query)
         {
-            if (string.IsNullOrWhiteSpace(query)) return GetAllBooks();
-            return _books.Where(b => b.Title.Contains(query, StringComparison.OrdinalIgnoreCase) || 
-                                     b.Author.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (string.IsNullOrWhiteSpace(query))
+                return GetAllBooks();
+
+            return _books
+                .Where(b =>
+                    b.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    b.Author.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
         /// <summary>
-        /// Зберігає поточну колекцію книг у текстовий файл.
+        /// Зберігає поточну колекцію книг у текстовий файл у форматі CSV.
         /// </summary>
         public void SaveToFile(string path)
         {
-            var lines = _books.Select(b => $"{b.Title};{b.Author};{b.Year};{b.Publisher};{b.Section};{b.Origin};{b.IsAvailable};{b.Rating}");
+            var lines = _books.Select(b =>
+                $"{b.Title};{b.Author};{b.Year};{b.Publisher};{b.Section};{b.Origin};{b.IsAvailable};{b.Rating}");
             File.WriteAllLines(path, lines);
         }
 
         /// <summary>
         /// Завантажує колекцію книг із текстового файлу.
+        /// Пошкоджені або некоректні рядки пропускаються без аварійного завершення.
         /// </summary>
         public void LoadFromFile(string path)
         {
             if (!File.Exists(path)) return;
-            var lines = File.ReadAllLines(path);
+
             _books.Clear();
-            foreach (var line in lines)
+            foreach (var line in File.ReadAllLines(path))
             {
                 var parts = line.Split(';');
-                if (parts.Length == 8)
+                if (parts.Length == 8 &&
+                    int.TryParse(parts[2], out int year) &&
+                    bool.TryParse(parts[6], out bool available) &&
+                    int.TryParse(parts[7], out int rating))
                 {
-                    _books.Add(new Book(parts[0], parts[1], int.Parse(parts[2]), parts[3], parts[4], parts[5], bool.Parse(parts[6]), int.Parse(parts[7])));
+                    _books.Add(new Book(
+                        parts[0], parts[1], year,
+                        parts[3], parts[4], parts[5],
+                        available, rating));
                 }
             }
         }
